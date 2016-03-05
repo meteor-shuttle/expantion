@@ -1,10 +1,4 @@
 Shuttler.SelectorFunctionSchema = new SimpleSchema({
-	graph: {
-		type: String,
-		custom: function() {
-			if (!Mongo.Collection.get(this.value)) return 'notAllowed';
-		}
-	},
 	field: {
 		type: String,
 		allowedValues: ["source", "target"]
@@ -36,6 +30,8 @@ Shuttler.SelectedDocumentSchema = new SimpleSchema({
 	}
 });
 Mongo.Collection.prototype.attachSelect = function() {
+	var collection = this;
+	
 	if (!this.isGraph) throw new Meteor.Error('Collection '+this._name+' is not a graph.');
 	if (this.isSelectGraph) throw new Meteor.Error('It is not possible to attach functional of selection several times.');
 	this.isSelectGraph = true;
@@ -57,23 +53,23 @@ Mongo.Collection.prototype.attachSelect = function() {
 		root: function() {
 			return this._selected?this._selected.root:this._id;
 		}
-	})
+	});
 	
-	this.selectableGraph = function(name) {
-		var graph = Mongo.Collection.get(name);
-		if (!graph) throw new Meteor.Error('Collection '+name+' is not defined.');
-		if (!graph.isGraph) throw new Meteor.Error('Collection '+name+' is not a graph.');
-		// graph.after.link
+	this.select = {
+		allowed: []
 	};
 	
-	this.select = function(selector) {
+	this.select.allow = function(graph, selector) {
 		var context = Shuttler.SelectorFunctionSchema.newContext();
 		if (!context.validate(selector)) {
 			throw new Meteor.Error(context.keyErrorMessage(context.invalidKeys()[0].name));
 		}
 		
-		var paths = Mongo.Collection.get(selector.graph);
-		var selects = this;
+		if (!(graph instanceof Mongo.Collection)) throw new Meteor.Error('Graph must be a Mongo.Collection');
+		var paths = graph;
+		var selects = collection;
+		
+		collection.select.allowed.push({ graph: graph, selector: selector });
 		
 		var So = selector.field; // selected changes field
 		var Ta = selector.field=='source'?'target':'source'; // target of selection
