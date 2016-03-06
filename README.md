@@ -143,6 +143,9 @@ On what will expend the selection started from `from`.
 
 ## Versions
 
+### 0.0.3
+* Fix for `0.0.2`
+
 ### 0.0.2
 * [#1](https://github.com/meteor-shuttler/selector/issues/1)
 

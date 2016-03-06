@@ -153,7 +153,9 @@ Mongo.Collection.prototype.attachSelect = function() {
 			var doc = this.action=='remove'?selected:this.previous;
 			if (selected.root() == selected._id) {
 				selects.remove({
-					'_selected.root': selected.root()
+					'_selected.root': selected._id,
+					'_source.id': doc._source.id, '_source.collection': doc._source.collection,
+					'_target.id': doc._target.id, '_target.collection': doc._target.collection
 				});
 			} else {
 				selects.remove({

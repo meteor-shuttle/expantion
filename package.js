@@ -1,6 +1,6 @@
 Package.describe({
   name: 'shuttler:selector',
-  version: '0.0.2',
+  version: '0.0.3',
   summary: 'Selectors in links of documents by links in graphs.',
   git: 'https://github.com/meteor-shuttler/selector',
   documentation: 'README.md'
