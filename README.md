@@ -108,7 +108,7 @@ Methods and temporary storage of information about the rules of selection / inhe
 #### collection.select.allow
 > (graph: Mongo.Collection, selector: Selector)
 
-It includes listening to this graph changes and the graph transferred to the selector.
+Adds listening to this graph changes and the graph transferred to the selector.
 
 Reacting to changes in their support this graph in an integrity.
 
@@ -137,11 +137,37 @@ From what part of the link in a given `selector.graph` will continue the selecti
 
 On what will expend the selection started from `from`.
 
+#### collection.select.deny
+> (graph: Mongo.Collection, selector: Selector)
+
+Adds listening graph which prevents the presence of links in this graph.
+
+Reacting to changes in their support this graph in an integrity.
+
+You can call this method several times. For example, it is possible to prohibit the intersection with a few graphs.
+
+##### Graph
+> Mongo.Collection
+
+Collection-graph whose links will be used as paths for selection.
+
+##### Selector
+> Object
+
+###### field
+> "source"|"target"
+
+The field pointing in this graph to the selected documents.
+
 ## Soon
 - [ ] `Selector.query?` `Object` mongodb query condition to enable or disable selection from root link, to support management of the selection from database
 - [ ] `collection.select.deny(graph: Mongo.Collection)` to be able to stop the selection of one graph by crossing with other graph with root link relevant to query
 
 ## Versions
+
+### 0.0.5
+* [#2](https://github.com/meteor-shuttler/selector/issues/2)
+* `graph.select.deny` for deny selection where there are links in another graph
 
 ### 0.0.2
 * [#1](https://github.com/meteor-shuttler/selector/issues/1)
