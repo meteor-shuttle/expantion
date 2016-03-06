@@ -58,9 +58,9 @@ Mongo.Collection.prototype.attachSelect = function() {
 		}
 	});
 	
-	this.select = {
-		_allowed: []
-	};
+	this.select = {}
+	
+	this.select._allowed = [];
 	
 	this.select.allow = function(graph, selector) {
 		var context = Shuttler.SelectorFunctionSchema.newContext();
@@ -154,6 +154,7 @@ Mongo.Collection.prototype.attachSelect = function() {
 			if (selected.root() == selected._id) {
 				selects.remove({
 					'_selected.root': selected._id,
+					'_selected.prev': undefined, '_selected.path': undefined,
 					'_source.id': doc._source.id, '_source.collection': doc._source.collection,
 					'_target.id': doc._target.id, '_target.collection': doc._target.collection
 				});
