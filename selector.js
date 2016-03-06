@@ -17,16 +17,19 @@ Shuttler.SelectorFunctionSchema = new SimpleSchema({
 });
 Shuttler.SelectedDocumentSchema = new SimpleSchema({
 	from: {
-		type: Shuttler.Ref.Schema
+		type: Shuttler.Ref.Schema,
+		optional: true
 	},
 	path: {
-		type: Shuttler.Ref.Schema
+		type: Shuttler.Ref.Schema,
+		optional: true
 	},
 	root: {
 		type: String
 	},
 	prev: {
-		type: String
+		type: String,
+		optional: true
 	}
 });
 Mongo.Collection.prototype.attachSelect = function() {
@@ -56,7 +59,7 @@ Mongo.Collection.prototype.attachSelect = function() {
 	});
 	
 	this.select = {
-		allowed: []
+		_allowed: []
 	};
 	
 	this.select.allow = function(graph, selector) {
@@ -69,39 +72,45 @@ Mongo.Collection.prototype.attachSelect = function() {
 		var paths = graph;
 		var selects = collection;
 		
-		collection.select.allowed.push({ graph: graph, selector: selector });
+		collection.select._allowed.push({ graph: graph, selector: selector });
 		
 		var So = selector.field; // selected changes field
 		var Ta = selector.field=='source'?'target':'source'; // target of selection
 		var Fr = selector.from; // path from
 		var To = selector.to; // path to
 		
-		var insertSelectedIntoPathCore = function(selected, path, so, from) {
+		var insertSelectedIntoPathCore = function(selected, path, so, from, prev) {
 			if (!selects.find({
 				['_'+Ta+'.id']: selected['_'+Ta].id, ['_'+Ta+'.collection']: selected['_'+Ta].collection,
 				['_'+So+'.id']: so.id, ['_'+So+'.collection']: so.collection,
-				'_selected.path.id': path._id, '_selected.path.collection': paths._name,
-				'_selected.from.id': from.id, '_selected.from.collection': from.collection,
-				'_selected.prev': selected._id, '_selected.root': selected.root()
+				'_selected.path.id': path?path._id:undefined, '_selected.path.collection': path?paths._name:undefined,
+				'_selected.from.id': from?from.id:undefined, '_selected.from.collection': from?from.collection:undefined,
+				'_selected.prev': prev?prev:undefined,
+				'_selected.root': selected.root()
 			}).count()){
 				selects.insert({
 					['_'+Ta]: selected['_'+Ta], ['_'+So]: so,
-					'_selected': { path: path.Ref(), from: from, prev: selected._id, root: selected.root() }
+					'_selected': {
+						path: path?path.Ref():undefined,
+						from: from?from:undefined,
+						prev: prev?prev:undefined,
+						root: selected.root()
+					}
 				});
 			}
 		};
 		
 		if (Fr == 'link') {
 			var insertSelectedIntoPath = function(selected, path) {
-				insertSelectedIntoPathCore(selected, path, path['_'+To], path.Ref());
+				insertSelectedIntoPathCore(selected, path, path['_'+To], path.Ref(), selected._id);
 			};
 		} else if (To == 'link') {
 			var insertSelectedIntoPath = function(selected, path) {
-				insertSelectedIntoPathCore(selected, path, path.Ref(), path['_'+Fr]);
+				insertSelectedIntoPathCore(selected, path, path.Ref(), path['_'+Fr], selected._id);
 			};
 		} else {
 			var insertSelectedIntoPath = function(selected, path) {
-				insertSelectedIntoPathCore(selected, path, path['_'+To], path['_'+Fr]);
+				insertSelectedIntoPathCore(selected, path, path['_'+To], path['_'+Fr], selected._id);
 			};
 		}
 		
@@ -116,24 +125,44 @@ Mongo.Collection.prototype.attachSelect = function() {
 			};
 		}
 		
+		if (Fr == 'link') {
+			var findEachSelected = function(path, handler) {
+				selects.links.find[So](path.Ref()).forEach(handler);
+			};
+		} else {
+			var findEachSelected = function(path, handler) {
+				selects.links.find[So](path['_'+Fr]).forEach(handler);
+			};
+		}
+		
 		// on So link
 		selects.after.link[So](function(userId, selected, fieldNames, modifier, options) {
 			var selected = selects._transform(selected);
-			findEachPaths(selected, function(path) {
-				insertSelectedIntoPath(selected, path);
-			});
+			if (selected.root() == selected._id) {
+				insertSelectedIntoPathCore(selected, undefined, selected['_'+So], undefined, undefined);
+			} else {
+				findEachPaths(selected, function(path) {
+					insertSelectedIntoPath(selected, path);
+				});
+			}
 		});
 		
 		// on So unlink
 		selects.after.unlink[So](function(userId, selected, fieldNames, modifier, options) {
 			var selected = selects._transform(selected);
 			var doc = this.action=='remove'?selected:this.previous;
-			selects.remove({
-				'_selected.root': selected.root(),
-				'_selected.prev': selected._id,
-				'_selected.from.id': doc['_'+selector.field].id,
-				'_selected.from.collection': doc['_'+selector.field].collection
-			});
+			if (selected.root() == selected._id) {
+				selects.remove({
+					'_selected.root': selected.root()
+				});
+			} else {
+				selects.remove({
+					'_selected.root': selected.root(),
+					'_selected.prev': selected._id,
+					'_selected.from.id': doc['_'+selector.field].id,
+					'_selected.from.collection': doc['_'+selector.field].collection
+				});
+			}
 		});
 		
 		// on Ta link
@@ -154,16 +183,6 @@ Mongo.Collection.prototype.attachSelect = function() {
 				'_selected.path.collection': paths._name
 			});
 		});
-		
-		if (Fr == 'link') {
-			var findEachSelected = function(path, handler) {
-				selects.links.find[So](path.Ref()).forEach(handler);
-			};
-		} else {
-			var findEachSelected = function(path, handler) {
-				selects.links.find[So](path['_'+Fr]).forEach(handler);
-			};
-		}
 		
 		// on path link
 		paths.after.link(function(userId, path, fieldNames, modifier, options) {

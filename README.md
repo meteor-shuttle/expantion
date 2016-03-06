@@ -96,7 +96,8 @@ rule.find().fetch();
 #### graph.attachSelect
 > ()
 
-Attach to the collection-graph `collection.select` method and field `_selected` with schema `Shuttle.SelectedDocumentSchema`.
+Attach `collection.select` object and field `_selected` with schema `Shuttle.SelectedDocumentSchema` to collection-graph.
+Attach helper `root() => String` to collection-graph.
 
 It can be used only once.
 
@@ -141,5 +142,10 @@ On what will expend the selection started from `from`.
 - [ ] `collection.select.deny(graph: Mongo.Collection)` to be able to stop the selection of one graph by crossing with other graph with root link relevant to query
 
 ## Versions
+
+### 0.0.2
+* [#1](https://github.com/meteor-shuttler/selector/issues/1)
+
+### 0.0.1
 * New syntax for select.
 * New future logic to deny.
