@@ -1,6 +1,12 @@
-# Selector
+# ~~Selector~~ DEPRECATED
 
 Selectors in links of documents by links in graphs.
+
+---
+
+New version: [shuttler:selection](https://github.com/meteor-shuttler/selection).
+
+---
 
 The server automatically maintains the integrity.
 Links is created automatically can not be manually changed.
